@@ -28,6 +28,18 @@ class MessagePublisherService
      */
     private $keyFile;
 
+    /**
+     * TOPIC will push messages to your SUBSCRIBERS
+     * $topicName: Unique Name for your subscribers ex. DEV_SOMESERVICE_REPORTS
+     * $subscriptionName: Unique Name for your subscribers ex. DEV_SOMESERVICE_REPORT_SUBSCRIPTION
+     * $projectId: The Google project ID
+     * $keyFile: The Google project key
+     *
+     * @param string $topicName
+     * @param string $subscriptionName
+     * @param string $projectId
+     * @param string $keyFile
+     */
     public function __construct(
         string $topicName,
         string $subscriptionName,
@@ -130,10 +142,12 @@ class MessagePublisherService
     }
 
     /**
+     * Pulls first off
+     *
      * @return array
      * @throws PubSubServiceException
      */
-    public function fetchFirstMessageFound(): array
+    public function pullMessage(): array
     {
         try {
             $message = [];
@@ -155,11 +169,17 @@ class MessagePublisherService
     }
 
     /**
+     * $data must be array of key/value string pairs
+     * ex.
+     * [
+     *  'key1' => $someValue1, //string
+     *  'key2' => $someValue2 //string
+     * ]
      * @param array $data
      * @return array
      * @throws Exception
      */
-    public function publish(array $data): array
+    public function publishMessage(array $data): array
     {
         $published = $this->getTopic()
             ->publish(
