@@ -1,0 +1,30 @@
+{
+  "name": "alldigitalrewards/pubsub",
+  "description": "PubSub Message Service",
+  "type": "library",
+  "license": "MIT",
+  "require": {
+    "php" : "^7.0|^8.0",
+    "google/cloud-pubsub": "^1.34"
+  },
+  "require-dev": {
+    "phpunit/phpunit" : "^7.0|^8|^9",
+    "squizlabs/php_codesniffer": "^3.0",
+    "roave/security-advisories": "dev-latest"
+  },
+  "autoload": {
+    "psr-4": {
+      "AllDigitalRewards\\PubSub\\": "src"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "AllDigitalRewards\\Tests\\": "./tests"
+    }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit",
+    "check-style": "vendor/bin/phpcs -p --standard=phpcs.xml src",
+    "fix-style": "vendor/bin/phpcbf -p --standard=phpcs.xml src"
+  }
+}
