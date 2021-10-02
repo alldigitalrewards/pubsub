@@ -44,6 +44,6 @@ $messageService->publish(
 * returns array 
 * throws PubSubServiceException
 $message = $messageService->pullMessage($subscriptionName)
-print_r($message[0]); //$someValue1
-print_r($message[1]); //$someValue2
+print_r($message['key1']); //$someValue1
+print_r($message['key2']); //$someValue2
 ```
