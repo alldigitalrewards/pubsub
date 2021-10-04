@@ -13,15 +13,10 @@ Create new instance
 * If Topic and/or Subscription names dont exist they will be created
 * naming convention is up to you.
 
-$environment = getenv('ENVIRONMENT'); //dev/qa/prod
-$topicName = $environment . '_SOMESERVICE_REPORTS';
-$subscriptionName = $environment . '_SOMESERVICE_REPORT_SUBSCRIPTION';
 $projectId = getenv('PROJECT_ID'); //The Google project ID
 $keyFile = getenv('PUBSUB_KEYFILE'); //The Google project key
 
 $messageService = new MessagePublisherService(
-  $topicName,
-  $subscriptionName,
   $projectId,
   $keyFile
 );
@@ -31,7 +26,12 @@ $messageService = new MessagePublisherService(
 ```bash
 * array of key/value string pairs as many, ex.
 * throws PubSubServiceException
+$message = new Message(
+    'DEV_TESTSERVICE2_TOPIC',
+    'DEV_TESTSERVICE2_SUBSCRIPTION',
+);
 $messageService->publish(
+    $message,
     [
         'key1' => $someValue1, //string
         'key2' => $someValue2 //string
@@ -43,7 +43,11 @@ $messageService->publish(
 ```bash
 * returns array 
 * throws PubSubServiceException
-$message = $messageService->pullMessage($subscriptionName)
+$messageConfig = new Message(
+    'DEV_TESTSERVICE2_TOPIC',
+    'DEV_TESTSERVICE2_SUBSCRIPTION',
+);
+$message = $messageService->pullMessage($messageConfig)
 print_r($message['key1']); //$someValue1
 print_r($message['key2']); //$someValue2
 ```

@@ -30,9 +30,6 @@ class MessagePublisherService
     private $message;
 
     /**
-     * TOPIC will push messages to your SUBSCRIBERS
-     * $topicName: Unique Name for your subscribers ex. DEV_SOMESERVICE_REPORTS
-     * $subscriptionName: Unique Name for your subscribers ex. DEV_SOMESERVICE_REPORT_SUBSCRIPTION
      * $projectId: The Google project ID
      * $keyFile: The Google project key
      *

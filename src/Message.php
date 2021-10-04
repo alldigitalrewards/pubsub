@@ -13,6 +13,14 @@ class Message
      */
     private $topicName;
 
+    /**
+     * TOPIC will push messages to your SUBSCRIBERS
+     * $topicName: Unique Name for your subscribers' ex. DEV_SOMESERVICE_REPORTS
+     * $subscriptionName: Unique Name for your subscribers' ex. DEV_SOMESERVICE_REPORT_SUBSCRIPTION
+
+     * @param string $topicName
+     * @param string $subscriptionName
+     */
     public function __construct(string $topicName, string $subscriptionName)
     {
         $this->setTopicName($topicName);
