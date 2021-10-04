@@ -50,11 +50,9 @@ class MessagePublisherService
     private function getTopic(): Topic
     {
         if ($this->topic === null) {
-            try {
+            $topic = $this->getClient()->topic($this->getMessage()->getTopicName());
+            if ($topic->exists() === false) {
                 $topic = $this->getClient()->createTopic($this->getMessage()->getTopicName());
-            } catch (Exception $exception) {
-                //exception is thrown when Topic exists so just fetch lazy
-                $topic = $this->getClient()->topic($this->getMessage()->getTopicName());
             }
             $this->topic = $topic;
         }
