@@ -3,6 +3,7 @@
 namespace AllDigitalRewards\PubSub;
 
 use Exception;
+use Google\Cloud\PubSub\PubSubClient;
 use Google\Cloud\PubSub\Topic;
 
 class MessagePublisherService
@@ -14,19 +15,19 @@ class MessagePublisherService
     /**
      * @var string
      */
-    private $subscriptionName;
-    /**
-     * @var string
-     */
-    private $topicName;
-    /**
-     * @var string
-     */
     private $projectId;
     /**
      * @var string
      */
     private $keyFile;
+    /**
+     * @var PubSubClient
+     */
+    private $client;
+    /**
+     * @var Message
+     */
+    private $message;
 
     /**
      * TOPIC will push messages to your SUBSCRIBERS
@@ -35,19 +36,13 @@ class MessagePublisherService
      * $projectId: The Google project ID
      * $keyFile: The Google project key
      *
-     * @param string $topicName
-     * @param string $subscriptionName
      * @param string $projectId
      * @param string $keyFile
      */
     public function __construct(
-        string $topicName,
-        string $subscriptionName,
         string $projectId,
         string $keyFile
     ) {
-        $this->setTopicName($topicName);
-        $this->setSubscriptionName($subscriptionName);
         $this->setProjectId($projectId);
         $this->setKeyFile($keyFile);
     }
@@ -58,12 +53,13 @@ class MessagePublisherService
     private function getTopic(): Topic
     {
         if ($this->topic === null) {
-            $this->topic = MessagePublisherFactory::getInstance(
-                $this->getTopicName(),
-                $this->getSubscriptionName(),
-                $this->getKeyFile(),
-                $this->getProjectId()
-            )->topic($this->getTopicName());
+            try {
+                $topic = $this->getClient()->createTopic($this->getMessage()->getTopicName());
+            } catch (Exception $exception) {
+                //exception is thrown when Topic exists so just fetch lazy
+                $topic = $this->getClient()->topic($this->getMessage()->getTopicName());
+            }
+            $this->topic = $topic;
         }
 
         return $this->topic;
@@ -75,38 +71,6 @@ class MessagePublisherService
     public function setTopic(Topic $topic)
     {
         $this->topic = $topic;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTopicName(): string
-    {
-        return $this->topicName;
-    }
-
-    /**
-     * @param string $topicName
-     */
-    public function setTopicName(string $topicName)
-    {
-        $this->topicName = $topicName;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSubscriptionName(): string
-    {
-        return $this->subscriptionName;
-    }
-
-    /**
-     * @param string $subscriptionName
-     */
-    public function setSubscriptionName(string $subscriptionName)
-    {
-        $this->subscriptionName = $subscriptionName;
     }
 
     /**
@@ -142,24 +106,65 @@ class MessagePublisherService
     }
 
     /**
+     * @return PubSubClient
+     */
+    public function getClient(): PubSubClient
+    {
+        if (isset($this->client) === false) {
+            $this->client = MessagePublisherFactory::getInstance(
+                $this->getKeyFile(),
+                $this->getProjectId()
+            );
+        }
+        return $this->client;
+    }
+
+    /**
+     * @param PubSubClient $client
+     */
+    public function setClient(PubSubClient $client)
+    {
+        $this->client = $client;
+    }
+
+    /**
+     * @return Message
+     */
+    public function getMessage(): Message
+    {
+        return $this->message;
+    }
+
+    /**
+     * @param Message $message
+     */
+    public function setMessage(Message $message)
+    {
+        $this->message = $message;
+    }
+
+    /**
      * Pulls first off
      *
+     * @param Message $messageConfig
      * @return array
      * @throws PubSubServiceException
      */
-    public function pullMessage(): array
+    public function pullMessage(Message $messageConfig): array
     {
         try {
+            $this->setMessage($messageConfig);
+
             $message = [];
             $messages = $this->getTopic()
-                ->subscription($this->getSubscriptionName())
+                ->subscription($messageConfig->getSubscriptionName())
                 ->pull(['returnImmediately' => true]);
             if (empty($messages) === false) {
                 $pulledMessage = $messages[0];
                 $message = $pulledMessage->attributes();
                 // acknowledge PULLED message
                 $this->getTopic()
-                    ->subscription($this->getSubscriptionName())
+                    ->subscription($messageConfig->getSubscriptionName())
                     ->acknowledge($pulledMessage);
             }
             return $message;
@@ -175,16 +180,20 @@ class MessagePublisherService
      *  'key1' => $someValue1, //string
      *  'key2' => $someValue2 //string
      * ]
+     * @param Message $message
      * @param array $data
      * @return array
-     * @throws Exception
+     * @throws PubSubServiceException
      */
-    public function publishMessage(array $data): array
+    public function publishMessage(Message $message, array $data): array
     {
+        $this->setMessage($message);
+        $this->setSubscription();
+
         $published = $this->getTopic()
             ->publish(
                 [
-                    'data' => $this->getSubscriptionName(),
+                    'data' => $message->getSubscriptionName(),
                     'attributes' => $data
                 ]
             );
@@ -192,5 +201,17 @@ class MessagePublisherService
             return $published;
         }
         throw new PubSubServiceException('Publish message failed');
+    }
+
+    private function setSubscription()
+    {
+        try {
+            if ($this->getTopic()->subscription($this->getMessage()->getSubscriptionName())->exists() === false) {
+                $subscription = $this->getTopic()->subscribe($this->getMessage()->getSubscriptionName());
+                $subscription->create();
+            }
+        } catch (\Exception $exception) {
+            //SDK throws error when exists
+        }
     }
 }
